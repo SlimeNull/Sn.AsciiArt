@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Sn.AsciiArtPlayer": {
+      "commandName": "Project",
+      "commandLineArgs": "-a \"C:\\Users\\slime\\Downloads\\badapple\\audio.mp3\" \"C:\\Users\\slime\\Downloads\\badapple\""
+    }
+  }
+}

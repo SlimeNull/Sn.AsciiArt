@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sn.AsciiArt", "Sn.AsciiArt\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole", "TestConsole\TestConsole.csproj", "{AE0A15BA-B963-4BBC-B071-4D16582C7ED8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sn.AsciiArtApp", "Sn.AsciiArtApp\Sn.AsciiArtApp.csproj", "{A327D0E3-5A08-46C6-9939-02E3E09009D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sn.AsciiArtPlayer", "Sn.AsciiArtPlayer\Sn.AsciiArtPlayer.csproj", "{879950AE-70E4-4D83-8047-D2AF9350D7B0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{AE0A15BA-B963-4BBC-B071-4D16582C7ED8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AE0A15BA-B963-4BBC-B071-4D16582C7ED8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AE0A15BA-B963-4BBC-B071-4D16582C7ED8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A327D0E3-5A08-46C6-9939-02E3E09009D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A327D0E3-5A08-46C6-9939-02E3E09009D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A327D0E3-5A08-46C6-9939-02E3E09009D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A327D0E3-5A08-46C6-9939-02E3E09009D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{879950AE-70E4-4D83-8047-D2AF9350D7B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{879950AE-70E4-4D83-8047-D2AF9350D7B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{879950AE-70E4-4D83-8047-D2AF9350D7B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{879950AE-70E4-4D83-8047-D2AF9350D7B0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,66 +1,61 @@
 ﻿using SkiaSharp;
+using System.Runtime.InteropServices;
 
 namespace Sn.AsciiArt
 {
-    public class AsciiSkin
+    public static class AnsiSequence
     {
-        private AsciiSkin(byte[,,] pixels, char c)
+        public static string GetAnsiSequenceStart(ConsoleColor foreground, ConsoleColor background)
+        {
+            int
+                fg = (int)foreground + 30,
+                bg = (int)background + 40;
+            return $"\x1b[{fg};{bg}m";
+        }
+
+        public static string GetAnsiSequenceEnd()
+        {
+            return "\x1b[0m";
+        }
+    }
+    
+    public class AsciiSkin : IDisposable
+    {
+        private AsciiSkin(IntPtr pixels, char c)
         {
             Charactor = c;
             Pixels = pixels;
-
-            laziedLightness = new Lazy<int>(() =>
-            {
-                long sum = 0;
-                for (int i = 0; i < Width; i++)
-                    for (int j = 0; j < Height; j++)
-                        sum += pixels[i, j, 0] + pixels[i, j, 1] + pixels[i, j, 2];
-                sum /= Width * Height * 3;
-                return (int)sum;
-            });
-
-            laziedComplexity = new Lazy<float>(() =>
-            {
-                HashSet<(byte r, byte g, byte b)> allColors = new HashSet<(byte r, byte g, byte b)>();
-                for (int i = 0; i < Width; i++)
-                    for (int j = 0; j < Height; j++)
-                        allColors.Add((pixels[i, j, 0], pixels[i, j, 1], pixels[i, j, 2]));
-                return (float)allColors.Count / (Width * Height);
-            });
         }
 
-        public byte[,,] Pixels { get; }
+        public IntPtr Pixels { get; }
 
         public const int Width = 8;
         public const int Height = 14;
+        public const int Stride = Width * 4;
         public char Charactor { get; }
 
-        private Lazy<int> laziedLightness;
-        private Lazy<float> laziedComplexity;
-
-        public int Lightness => laziedLightness.Value;
-        public float Complexity => laziedComplexity.Value;
-
-        private static AsciiSkin Create(SKPaint paint, char c)
+        public static readonly char[] DefaultCharactors = new []
         {
-            using SKBitmap bmp = new SKBitmap(Width, Height, true);
+            ' ', '~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+',
+            '{', '}', '|', '[', ']', '\\', ':', '"', ';', '\'', '<', '>', '?', ',', '.', '/', '`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=',
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+        };
+
+        private static unsafe AsciiSkin Create(SKPaint paint, char c)
+        {
+            int pixelByteCount = Width * Height * 4;
+            using SKBitmap bmp = new SKBitmap(Width, Height, SKColorType.Bgra8888, SKAlphaType.Unpremul);
             using SKCanvas canvas = new SKCanvas(bmp);
-            
             canvas.DrawText(Convert.ToString(c), 0, 12, paint);
-            byte[,,] pixels = new byte[Width,Height,3];
 
-            for (int i = 0; i < Width; i++)
-            {
-                for (int j = 0; j < Height; j++)
-                {
-                    SKColor color = bmp.GetPixel(i, j);
-                    pixels[i, j, 0] = color.Red;
-                    pixels[i, j, 1] = color.Green;
-                    pixels[i, j, 2] = color.Blue;
-                }
-            }
+            byte* sp = (byte*)bmp.GetPixels();
+            byte* p = (byte*)Marshal.AllocHGlobal(pixelByteCount);
 
-            return new AsciiSkin(pixels, c);
+            for (int i = 0; i < pixelByteCount; i++)
+                p[i] = sp[i];
+
+            return new AsciiSkin((IntPtr)p, c);
         }
 
         public static AsciiSkin Create(char c)
@@ -84,45 +79,14 @@ namespace Sn.AsciiArt
             return result;
         }
 
-        public static float GetSimilarity(SKBitmap bmp, AsciiSkin skin, int x, int y)
+        private bool disposed = false;
+        public void Dispose()
         {
-            float GetSimilarityOfColor()
-            {
-                float similarity = 0;
-                for (int i = 0; i < Width; i++)
-                {
-                    for (int j = 0; j < Height; j++)
-                    {
-                        SKColor color = bmp.GetPixel(x + i, y + j);
-                        similarity += 1 - MathF.Abs(color.Red - skin.Pixels[i, j, 0]) / 255f;
-                        similarity += 1 - MathF.Abs(color.Green - skin.Pixels[i, j, 1]) / 255f;
-                        similarity += 1 - MathF.Abs(color.Blue - skin.Pixels[i, j, 2]) / 255f;
-                    }
-                }
+            if (disposed)
+                return;
 
-                similarity /= Width * Height * 3;
-                return similarity;
-            }
-
-            float GetSimilarityOfLight()
-            {
-                long lightness = 0;
-                for (int i = 0; i < Width; i++)
-                {
-                    for (int j = 0; j < Height; j++)
-                    {
-                        SKColor color = bmp.GetPixel(x + i, y + j);
-                        lightness += color.Red;
-                        lightness += color.Green;
-                        lightness += color.Blue;
-                    }
-                }
-
-                lightness /= Width * Height * 3;   // max 255
-                return MathF.Abs(1 - (skin.Lightness - lightness) / 255f);
-            }
-
-            return GetSimilarityOfLight();
+            disposed = true;
+            Marshal.FreeHGlobal(Pixels);
         }
     }
 }
