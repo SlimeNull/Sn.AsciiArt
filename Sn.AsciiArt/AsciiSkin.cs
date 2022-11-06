@@ -26,13 +26,14 @@ namespace Sn.AsciiArt
         public ConsoleColor Background { get; }
         public ConsoleColor Foreground { get; }
 
-        public static readonly SKFont FontSimSun =
-            new SKFont(SKTypeface.FromStream(new MemoryStream(Resources.NSimSun)), 16);
-        public static readonly SKPaint PaintSimSun =
-            new SKPaint(FontSimSun)
-            {
-                Color = new SKColor(255, 255, 255)
-            };
+        private static readonly Lazy<SKFont> LaziedFontSimSun =
+            new Lazy<SKFont>(() => new SKFont(SKTypeface.FromStream(new MemoryStream(Resources.NSimSun)), 16));
+
+        private static readonly Lazy<SKPaint> LaziedPaintSimSun =
+            new Lazy<SKPaint>(() =>  new SKPaint(FontSimSun));
+
+        public static SKFont FontSimSun => LaziedFontSimSun.Value;
+        public static SKPaint PaintSimSun => LaziedPaintSimSun.Value;
 
         public static readonly char[] DefaultCharactors = new []
         {
