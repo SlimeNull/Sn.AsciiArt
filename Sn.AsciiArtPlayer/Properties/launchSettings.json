@@ -2,7 +2,7 @@
   "profiles": {
     "Sn.AsciiArtPlayer": {
       "commandName": "Project",
-      "commandLineArgs": "-a \"C:\\Users\\slime\\Downloads\\badapple\\audio.mp3\" \"C:\\Users\\slime\\Downloads\\badapple\""
+      "commandLineArgs": "-a \"C:\\Users\\slime\\Downloads\\badapple\\audio.aac\" -d 0:3:39 \"C:\\Users\\slime\\Downloads\\badapple\""
     }
   }
 }

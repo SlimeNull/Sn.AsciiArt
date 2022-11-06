@@ -8,17 +8,19 @@ Console.WriteLine("Hello, World!");
 string path = @"C:\Users\slime\Downloads\test.png";
 SKBitmap src = SKBitmap.Decode(path);
 
-AsciiSkin[] skins = AsciiSkin.Create(
-    new char[] { ' ', '.', ',', '-', '~', ':', ';', '=', '!', '*', '#', '$', '@',
-                 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-                 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z' });
+List<AsciiSkin> skinList = new List<AsciiSkin>();
+foreach (ConsoleColor fore in Enum.GetValues<ConsoleColor>())
+    skinList.AddRange(AsciiSkin.Create(ConsoleColor.Black, fore, AsciiSkin.DefaultCharactors));
+
+AsciiSkin[] skins = skinList.ToArray();
 
 Stopwatch watch = new Stopwatch();
 
+AsciiArtGen.MultiThreading = true;
 for (int i = 0; i < 100; i++)
 {
     watch.Restart();
-    string ascii = AsciiArtGen.Generate(src, skins);
+    string ascii = AsciiArtGen.GenerateColored(src, skins);
     watch.Stop();
 
     string awa = string.Intern(ascii);

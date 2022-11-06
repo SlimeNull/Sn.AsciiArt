@@ -17,39 +17,70 @@ void Run(AppOptions options)
         Console.WriteLine("Folder is not exist");
         return;
     }
+    
+    Console.WriteLine($"Ascii: {options.AsciiFolder}");
 
     if (!string.IsNullOrWhiteSpace(options.Audio) && File.Exists(options.Audio))
     {
+        Console.WriteLine("Loading audio...");
         AudioFileReader file = new AudioFileReader(options.Audio);
         audio = new WaveOutEvent();
         audio.Init(file);
         
-        options.Duration = file.TotalTime.ToString();
+        if (options.Duration == null)
+            options.Duration = file.TotalTime;
     }
 
-    if (!TimeSpan.TryParse(options.Duration, out TimeSpan span))
-    {
-        Console.WriteLine("Invalid duration");
-        return;
-    }
+    if (options.Duration == null)
+        options.Duration = TimeSpan.FromSeconds(10);
 
+    Console.WriteLine("Checking files...");
     int end = options.Start;
     while (File.Exists(Path.Combine(options.AsciiFolder, $"{end}.txt")))
         end++;
-
     int count = end - options.Start;
+    
+    Console.WriteLine($"Reading {count} files...");
+
     string[] buffer = new string[count];
     for (int i = 0; i < count; i++)
         buffer[i] = File.ReadAllText(Path.Combine(options.AsciiFolder, $"{options.Start + i}.txt"));
 
+    Console.Clear();
+
     if (audio != null)
         audio.Play();
+    Stopwatch watch = new Stopwatch();
+    watch.Start();
 
-    DateTime start = DateTime.Now;
     for (int i = 0; i < count; i++)
     {
-        while (DateTime.Now < start + span * ((float)i / count))
-        { }
+        while (watch.Elapsed < options.Duration * ((float)i / count))
+        {
+            if (Console.KeyAvailable)
+            {
+                ConsoleKeyInfo key = Console.ReadKey();
+                switch (key.Key)
+                {
+                    case ConsoleKey.Escape:
+                        return;
+                    case ConsoleKey.Spacebar:
+                        if (watch.IsRunning)
+                            watch.Stop();
+                        else
+                            watch.Start();
+                        if (audio != null)
+                        {
+                            if (audio.PlaybackState == PlaybackState.Playing)
+                                audio.Pause();
+                            else
+                                audio.Play();
+                        }
+                        
+                        break;
+                }
+            }
+        }
 
         Console.SetCursorPosition(0, 0);
         Console.WriteLine(buffer[i]);

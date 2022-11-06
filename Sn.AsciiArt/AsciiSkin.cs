@@ -1,38 +1,38 @@
 ﻿using SkiaSharp;
+using Sn.AsciiArt.Properties;
 using System.Runtime.InteropServices;
 
 namespace Sn.AsciiArt
 {
-    public static class AnsiSequence
-    {
-        public static string GetAnsiSequenceStart(ConsoleColor foreground, ConsoleColor background)
-        {
-            int
-                fg = (int)foreground + 30,
-                bg = (int)background + 40;
-            return $"\x1b[{fg};{bg}m";
-        }
 
-        public static string GetAnsiSequenceEnd()
-        {
-            return "\x1b[0m";
-        }
-    }
-    
     public class AsciiSkin : IDisposable
     {
-        private AsciiSkin(IntPtr pixels, char c)
+        private AsciiSkin(IntPtr pixels, ConsoleColor back, ConsoleColor fore, char c)
         {
             Charactor = c;
+            Background = back;
+            Foreground = fore;
+
             Pixels = pixels;
         }
 
         public IntPtr Pixels { get; }
 
         public const int Width = 8;
-        public const int Height = 14;
+        public const int Height = 16;
         public const int Stride = Width * 4;
         public char Charactor { get; }
+
+        public ConsoleColor Background { get; }
+        public ConsoleColor Foreground { get; }
+
+        public static readonly SKFont FontSimSun =
+            new SKFont(SKTypeface.FromStream(new MemoryStream(Resources.NSimSun)), 16);
+        public static readonly SKPaint PaintSimSun =
+            new SKPaint(FontSimSun)
+            {
+                Color = new SKColor(255, 255, 255)
+            };
 
         public static readonly char[] DefaultCharactors = new []
         {
@@ -42,12 +42,26 @@ namespace Sn.AsciiArt
             'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
         };
 
-        private static unsafe AsciiSkin Create(SKPaint paint, char c)
+        private static unsafe AsciiSkin Create(SKPaint paint, ConsoleColor back, ConsoleColor fore, char c)
         {
             int pixelByteCount = Width * Height * 4;
-            using SKBitmap bmp = new SKBitmap(Width, Height, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+            using SKBitmap bmp = new SKBitmap(Width, Height, SKColorType.Bgra8888, SKAlphaType.Opaque);
             using SKCanvas canvas = new SKCanvas(bmp);
-            canvas.DrawText(Convert.ToString(c), 0, 12, paint);
+
+            canvas.Clear(AnsiSequence.GetColor(back));
+            canvas.DrawText(Convert.ToString(c), 0, 14, paint);
+
+#if DEBUG
+            string GetFileName(string src)
+            {
+                foreach (char i in new[] { ':', '/', '\\', '*', '?', '"', '<', '>', '|' })
+                    src = src.Replace(i.ToString(), $"_{Path.GetRandomFileName()}");
+                return src;
+            }
+
+            using FileStream fs = File.Create($"{GetFileName(c.ToString())}_{back}_{fore}.png");
+            bmp.Encode(fs, SKEncodedImageFormat.Png, 100);
+#endif
 
             byte* sp = (byte*)bmp.GetPixels();
             byte* p = (byte*)Marshal.AllocHGlobal(pixelByteCount);
@@ -55,29 +69,34 @@ namespace Sn.AsciiArt
             for (int i = 0; i < pixelByteCount; i++)
                 p[i] = sp[i];
 
-            return new AsciiSkin((IntPtr)p, c);
+            return new AsciiSkin((IntPtr)p, back, fore, c);
         }
 
-        public static AsciiSkin Create(char c)
+        public static AsciiSkin Create(ConsoleColor back, ConsoleColor fore, char c)
         {
-            SKFont simsun = new SKFont(SKTypeface.FromFamilyName("SimSun"), 16);
-            return Create(new SKPaint(simsun), c);
+            SKPaint paintCopy = PaintSimSun.Clone();
+            paintCopy.Color = AnsiSequence.GetColor(fore);
+
+            return Create(paintCopy, back, fore, c);
         }
 
-        public static AsciiSkin[] Create(char[] cs)
+        public static AsciiSkin[] Create(ConsoleColor back, ConsoleColor fore, char[] cs)
         {
-            SKFont simsun = new SKFont(SKTypeface.FromFamilyName("SimSun"), 16);
-            SKPaint paint = new SKPaint(simsun);
-
-            paint.Color = new SKColor(255, 255, 255);
+            SKPaint paintCopy = PaintSimSun.Clone();
+            paintCopy.Color = AnsiSequence.GetColor(fore);
 
             AsciiSkin[] result = new AsciiSkin[cs.Length];
 
             for (int i = 0; i < cs.Length; i++)
-                result[i] = Create(paint, cs[i]);
+                result[i] = Create(paintCopy, back, fore, cs[i]);
 
             return result;
         }
+
+        public static AsciiSkin Create(char c) => Create(ConsoleColor.Black, ConsoleColor.White, c);
+
+        public static AsciiSkin[] Create(char[] cs) => Create(ConsoleColor.Black, ConsoleColor.White, cs);
+
 
         private bool disposed = false;
         public void Dispose()

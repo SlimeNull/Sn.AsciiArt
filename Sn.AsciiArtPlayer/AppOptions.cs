@@ -16,7 +16,7 @@ namespace Sn.AsciiArtPlayer
         public string Audio { get; set; } = string.Empty;
         
         [Option('d', "duration", HelpText = "Audio file to be played with.")]
-        public string Duration { get; set; } = TimeSpan.FromSeconds(10).ToString();
+        public TimeSpan? Duration { get; set; } = null;
 
 
         [Value(0, MetaName = "ascii-folder", Required = true, HelpText = "Folder contains ascii art files.")]
