@@ -1,8 +1,10 @@
 ﻿using CommandLine;
 using NAudio.Wave;
 using Sn.AsciiArtPlayer;
+using Sn.AsciiArtPlayer.Utils;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 ParserResult<AppOptions> rst = Parser.Default.ParseArguments<AppOptions>(args);
 rst.WithParsed(Run);
@@ -10,6 +12,16 @@ rst.WithNotParsed(err => err.Output());
 
 void Run(AppOptions options)
 {
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+    {
+        uint err =PlatformUtils.EnableVirtualTerminalProcessingOnWindows();
+        if (err != 0)
+        {
+            Console.WriteLine($"Failed to enable VT processing on Windows. Err code: {err}.");
+            Console.ReadKey();
+        }
+    }
+
     WaveOutEvent? audio = null;
 
     if (!Directory.Exists(options.AsciiFolder))
@@ -42,9 +54,9 @@ void Run(AppOptions options)
     
     Console.WriteLine($"Reading {count} files...");
 
-    string[] buffer = new string[count];
+    StreamReader[] buffer = new StreamReader[count];
     for (int i = 0; i < count; i++)
-        buffer[i] = File.ReadAllText(Path.Combine(options.AsciiFolder, $"{options.Start + i}.txt"));
+        buffer[i] = new StreamReader(File.OpenRead(Path.Combine(options.AsciiFolder, $"{options.Start + i}.txt")));
 
     Console.Clear();
 
@@ -83,6 +95,6 @@ void Run(AppOptions options)
         }
 
         Console.SetCursorPosition(0, 0);
-        Console.WriteLine(buffer[i]);
+        Console.WriteLine(buffer[i].ReadToEnd());
     }
 }
